@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>File Upload and Download</title>
+	<style>
+		body {
+			font-family: 'Arial', sans-serif;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			margin: 0;
+		}
+
+		#drop-area {
+			border: 2px dashed #ccc;
+			padding: 20px;
+			text-align: center;
+			margin: 20px;
+			cursor: pointer;
+		}
+
+		#file-list {
+			margin-top: 20px;
+		}
+
+		.drop-text {
+			font-size: 18px;
+		}
+
+		.highlight {
+			border-color: #2196F3;
+		}
+
+		#fileInput {
+			display: none;
+		}
+		#file-list{
+			margin-left: 30px;
+		}
+		#download-all{
+			margin-left: 20px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="drop-area">
+		<p class="drop-text">Drag & Drop files here or click to select</p>
+		<input type="file" id="fileInput" multiple>
+	</div>
+
+	<button id="download-all">Download All</button>
+
+	<div id="file-list">
+		<!-- File list will be displayed here -->
+	</div>
+
+</body>
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		const dropArea = document.getElementById('drop-area');
+		const fileInput = document.getElementById('fileInput');
+		const fileListDiv = document.getElementById('file-list');
+
+		dropArea.addEventListener('dragover', handleDragOver);
+		dropArea.addEventListener('drop', handleFileDrop);
+		fileListDiv.addEventListener('change', handleFileSelect);
+
+		// Alternatively, allow file selection by clicking
+		dropArea.addEventListener('click', () => {
+			fileInput.click();
+		});
+
+		function handleDragOver(event) {
+			event.preventDefault();
+			dropArea.style.border = '2px dashed #888';
+		}
+
+		function handleFileDrop(event) {
+			event.preventDefault();
+			dropArea.style.border = '2px dashed #ccc';
+			handleFiles(event.dataTransfer.files);
+		}
+
+		function handleFileSelect(event) {
+			handleFiles(event.target.files);
+		}
+
+		// Handle file input change event
+		fileInput.addEventListener('change', () => {
+			const files = fileInput.files;
+			handleFiles(files);
+		});
+
+		// Function to handle the selected/dropped files
+		function handleFiles(files) {
+			fileListDiv.innerHTML = ''; // Clear the file list
+
+			const formData = new FormData();
+
+			for (const file of files) {
+
+				formData.append('file', file);
+				const xhr = new XMLHttpRequest();
+				xhr.open('POST', 'upload', true);
+
+				// Create a container element for each download link
+				const linkContainer = document.createElement('div');
+
+				// Create a link to download the file
+				const downloadLink = document.createElement('a');
+				downloadLink.href = `download?filename=${file.name}`;
+
+				// Extract the file name
+				const processedFileName = file.name;
+
+				// Set the download link attributes
+				downloadLink.setAttribute('data-filename', processedFileName);
+				downloadLink.textContent = processedFileName;
+
+				// Append the download link to the container
+				linkContainer.appendChild(downloadLink);
+
+				// Add a margin-bottom to create space between links
+				linkContainer.style.marginBottom = '10px';
+
+				// Append the container to the file list
+				fileListDiv.appendChild(linkContainer);
+
+				xhr.send(formData);
+			}
+		}
+
+
+		// Handle file download when a link is clicked
+		fileListDiv.addEventListener('click', (event) => {
+			if (event.target.tagName === 'A') {
+				event.preventDefault();
+				const fileName = event.target.getAttribute('data-filename');
+
+				// You may need to replace 'download' with the actual endpoint on your server
+				const downloadLink = 'download?filename=' + fileName;
+
+				// Perform the download
+				window.location.href = downloadLink;
+			}
+		});
+
+		const downloadAllButton = document.getElementById('download-all');
+		downloadAllButton.addEventListener('click', () => {
+			const downloadLinks = document.querySelectorAll('#file-list a[data-filename]');
+
+			if (downloadLinks.length > 0) {
+				downloadLinks.forEach(link => {
+					const fileName = link.getAttribute('data-filename');
+					const downloadLink = `download?filename=${fileName}`;
+
+					// Trigger download for each file
+					const anchor = document.createElement('a');
+					anchor.href = downloadLink;
+					anchor.download = fileName;
+					anchor.style.display = 'none';
+					document.body.appendChild(anchor);
+					anchor.click();
+					document.body.removeChild(anchor);
+				});
+			} else {
+				alert('No files to download.');
+			}
+		});
+
+	});
+
+</script>
+
+</html>
